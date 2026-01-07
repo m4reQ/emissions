@@ -11,12 +11,12 @@ public:
 
     ~Window() noexcept;
 
-    bool ShouldClose() noexcept;
-    void PollEvents() noexcept;
-    void SwapBuffers() noexcept;
-    int32_t GetWidth() noexcept;
-    int32_t GetHeight() noexcept;
-    std::pair<int32_t, int32_t> GetSize() noexcept;
+    bool ShouldClose() const noexcept;
+    void PollEvents() const noexcept;
+    void SwapBuffers() const noexcept;
+    int32_t GetWidth() const noexcept;
+    int32_t GetHeight() const noexcept;
+    std::pair<int32_t, int32_t> GetSize() const noexcept;
 
     constexpr GLFWwindow *GetHandle() const noexcept { return window_; }
 

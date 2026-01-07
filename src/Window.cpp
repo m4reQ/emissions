@@ -36,22 +36,22 @@ Window::~Window() noexcept
     glfwTerminate();
 }
 
-bool Window::ShouldClose() noexcept
+bool Window::ShouldClose() const noexcept
 {
     return glfwWindowShouldClose(window_);
 }
 
-void Window::PollEvents() noexcept
+void Window::PollEvents() const noexcept
 {
     glfwPollEvents();
 }
 
-void Window::SwapBuffers() noexcept
+void Window::SwapBuffers() const noexcept
 {
     glfwSwapBuffers(window_);
 }
 
-int32_t Window::GetWidth() noexcept
+int32_t Window::GetWidth() const noexcept
 {
     int32_t width;
     glfwGetFramebufferSize(window_, &width, nullptr);
@@ -59,7 +59,7 @@ int32_t Window::GetWidth() noexcept
     return width;
 }
 
-int32_t Window::GetHeight() noexcept
+int32_t Window::GetHeight() const noexcept
 {
     int32_t height;
     glfwGetFramebufferSize(window_, nullptr, &height);
@@ -67,7 +67,7 @@ int32_t Window::GetHeight() noexcept
     return height;
 }
 
-std::pair<int32_t, int32_t> Window::GetSize() noexcept
+std::pair<int32_t, int32_t> Window::GetSize() const noexcept
 {
     int32_t width, height;
     glfwGetFramebufferSize(window_, &width, &height);
