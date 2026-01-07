@@ -93,3 +93,20 @@ void Shader::Link()
         throw std::runtime_error("Failed to link shader.");
     }
 }
+
+void Shader::BindUniformBuffer(const std::string_view uniformBlockName, const Buffer &buffer)
+{
+    glBindBufferBase(GL_UNIFORM_BUFFER, GetUniformBlockLocation(uniformBlockName), buffer.GetID());
+}
+
+GLuint Shader::GetUniformBlockLocation(const std::string_view name)
+{
+    const auto it = interface_.find(name);
+    if (it != interface_.end())
+        return it->second;
+    
+    GLuint id = glGetUniformBlockIndex(id_, name.data());
+    interface_.emplace(name, id);
+
+    return id;
+}
