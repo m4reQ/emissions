@@ -2,10 +2,47 @@
 #include <stdexcept>
 #include <format>
 #include "Window.hpp"
+#include "OpenGL/Framebuffer.hpp"
 #include <glad/gl.h>
 #include <imgui.h>
 #include <backends/imgui_impl_opengl3.h>
 #include <backends/imgui_impl_glfw.h>
+
+static void RenderMainFrame(Framebuffer &framebuffer)
+{
+    framebuffer.Bind();
+    
+    glClearColor(1.0, 1.0, 0.5, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+    
+    framebuffer.Unbind();
+}
+
+static void RenderImGUI(Framebuffer &framebuffer)
+{
+    ImGui::NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui_ImplOpenGL3_NewFrame();
+
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    ImGui::DockSpaceOverViewport(0, 0, ImGuiDockNodeFlags_PassthruCentralNode);
+
+    ImGui::Begin("Test window");
+    ImGui::Text("Hello world!");
+    ImGui::End();
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.0f, 0.0f});
+    ImGui::Begin("Framebuffer");
+    const auto &colorAttachment = framebuffer.GetAttachment(0);
+    ImGui::Image((ImTextureRef)colorAttachment.ID, {(float)colorAttachment.Width, (float)colorAttachment.Height});
+    ImGui::End();
+    ImGui::PopStyleVar();
+
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
 
 int main()
 {
@@ -13,6 +50,18 @@ int main()
 
     if (!gladLoadGL(glfwGetProcAddress))
         throw std::runtime_error("Failed to load OpenGL bindings.");
+
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageCallback(
+        [](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam)
+        {
+            std::cerr << std::format("OpenGL message: {}\n", message);
+        },
+        nullptr);
+
+    Framebuffer framebuffer(window.GetSize());
+    framebuffer.AddAttachment(GL_RGBA8);
 
     if (!ImGui::CreateContext())
         throw std::runtime_error("Failed to create ImGUI context.");
@@ -32,21 +81,8 @@ int main()
     {
         window.PollEvents();
 
-        ImGui::NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui_ImplOpenGL3_NewFrame();
-
-        glClearColor(1.0, 1.0, 0.5, 1.0);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        ImGui::DockSpaceOverViewport(0, 0, ImGuiDockNodeFlags_PassthruCentralNode);
-
-        ImGui::Begin("Test window");
-        ImGui::Text("Hello world!");
-        ImGui::End();
-
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        RenderMainFrame(framebuffer);
+        RenderImGUI(framebuffer);
 
         window.SwapBuffers();
     }
