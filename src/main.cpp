@@ -18,7 +18,9 @@ int main()
         throw std::runtime_error("Failed to create ImGUI context.");
 
     const auto [width, height] = window.GetSize();
-    ImGui::GetIO().DisplaySize = {(float)width, (float)height};
+    auto &imguiIO = ImGui::GetIO();
+    imguiIO.DisplaySize = {(float)width, (float)height};
+    imguiIO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     if (!ImGui_ImplGlfw_InitForOpenGL(window.GetHandle(), true))
         throw std::runtime_error("Failed to initialize ImGUI GLFW backend.");
@@ -36,6 +38,8 @@ int main()
 
         glClearColor(1.0, 1.0, 0.5, 1.0);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        ImGui::DockSpaceOverViewport(0, 0, ImGuiDockNodeFlags_PassthruCentralNode);
 
         ImGui::Begin("Test window");
         ImGui::Text("Hello world!");
