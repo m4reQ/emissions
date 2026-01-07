@@ -3,6 +3,13 @@
 #include <iostream>
 #include <format>
 
+#ifdef _DEBUG
+#define OPENGL_DEBUG GLFW_TRUE
+#else
+#define OPENGL_DEBUG GLFW_FALSE
+#endif
+
+
 Window::Window(int32_t width, int32_t height, const std::string_view name)
 {
     if (!glfwInit())
@@ -18,7 +25,7 @@ Window::Window(int32_t width, int32_t height, const std::string_view name)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, _DEBUG);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, OPENGL_DEBUG);
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
     glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
 
