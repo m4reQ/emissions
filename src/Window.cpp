@@ -74,3 +74,8 @@ std::pair<int32_t, int32_t> Window::GetSize() const noexcept
 
     return {width, height};
 }
+
+double Window::GetTime() const noexcept
+{
+    return glfwGetTime();
+}

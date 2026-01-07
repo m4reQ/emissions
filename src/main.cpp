@@ -18,8 +18,10 @@ static void RenderMainFrame(Framebuffer &framebuffer)
     framebuffer.Unbind();
 }
 
-static void RenderImGUI(Framebuffer &framebuffer)
+static void RenderImGUI(Framebuffer &framebuffer, double frameTime)
 {
+    const auto &colorAttachment = framebuffer.GetAttachment(0);
+
     ImGui::NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui_ImplOpenGL3_NewFrame();
@@ -29,14 +31,15 @@ static void RenderImGUI(Framebuffer &framebuffer)
 
     ImGui::DockSpaceOverViewport(0, 0, ImGuiDockNodeFlags_PassthruCentralNode);
 
-    ImGui::Begin("Test window");
-    ImGui::Text("Hello world!");
+    ImGui::Begin("Frame info");
+    ImGui::Text(std::format("Frametime: {:.5f}", frameTime).c_str());
+    ImGui::Text(std::format("FPS: {:.2f}", 1.0 / frameTime).c_str());
+    ImGui::Text(std::format("Viewport size: {}x{}", colorAttachment.Width, colorAttachment.Height).c_str());
     ImGui::End();
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.0f, 0.0f});
-    ImGui::Begin("Framebuffer");
-    const auto &colorAttachment = framebuffer.GetAttachment(0);
-    ImGui::Image((ImTextureRef)colorAttachment.ID, {(float)colorAttachment.Width, (float)colorAttachment.Height});
+    ImGui::Begin("Framebuffer", nullptr, ImGuiWindowFlags_NoTitleBar);
+    ImGui::Image((ImTextureRef)colorAttachment.ID, ImGui::GetContentRegionAvail());
     ImGui::End();
     ImGui::PopStyleVar();
 
@@ -77,14 +80,19 @@ int main()
     if (!ImGui_ImplOpenGL3_Init())
         throw std::runtime_error("Failed to initialize ImGUI OpenGL backend.");
     
+    double frameTime = 1.0;
     while (!window.ShouldClose())
     {
+        const auto start = window.GetTime();
+
         window.PollEvents();
 
         RenderMainFrame(framebuffer);
-        RenderImGUI(framebuffer);
+        RenderImGUI(framebuffer, frameTime);
 
         window.SwapBuffers();
+
+        frameTime = window.GetTime() - start;
     }
 
     ImGui_ImplOpenGL3_Shutdown();

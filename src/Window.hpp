@@ -17,6 +17,7 @@ public:
     int32_t GetWidth() const noexcept;
     int32_t GetHeight() const noexcept;
     std::pair<int32_t, int32_t> GetSize() const noexcept;
+    double GetTime() const noexcept;
 
     constexpr GLFWwindow *GetHandle() const noexcept { return window_; }
 
