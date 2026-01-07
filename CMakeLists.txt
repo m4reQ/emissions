@@ -24,3 +24,10 @@ target_link_libraries(emissions PUBLIC glfw glad_gl)
 target_include_directories(emissions PUBLIC "vendor/imgui")
 target_compile_definitions(emissions PUBLIC "GLFW_INCLUDE_NONE")
 set_target_properties(emissions PROPERTIES CXX_STANDARD 23)
+
+add_custom_command(
+    TARGET emissions
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/data/"
+        "$<TARGET_FILE_DIR:emissions>/data")
