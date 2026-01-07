@@ -16,6 +16,8 @@ public:
     void AddStage(GLenum type, const std::string_view source);
     void Link();
 
+    constexpr GLuint GetID() const noexcept { return id_; }
+
 private:
     std::vector<GLuint> stages_;
     GLuint id_;
