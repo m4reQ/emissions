@@ -22,6 +22,9 @@ public:
     void Write(const std::span<std::byte> data, GLintptr offset = 0);
     void Write(const void *data, GLsizeiptr dataSize, GLintptr offset = 0);
 
+    template <typename T>
+    void Write(const T& data) { Write(&data, sizeof(T)); }
+
     constexpr GLuint GetID() const noexcept { return id_; }
 private:
     GLuint id_;
