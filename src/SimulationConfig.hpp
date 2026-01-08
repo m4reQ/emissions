@@ -13,7 +13,9 @@ struct SimulationConfig
     glm::vec2 Size;
     glm::vec2 Stability;
     float WindSpeed;
+    float WindDir;
     float DepositionCoeff;
+    float _Pad1;
     glm::ivec2 Resolution;
     int EmittersCount;
 };

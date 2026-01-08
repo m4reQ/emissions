@@ -14,6 +14,7 @@ layout(std140, binding = 1) uniform uSimulationConfig
     vec2 size;              // [m]
     vec2 stability;         // [1]
     float windSpeed;        // [m/s]
+    float windDir;          // [rad]
     float depositionCoeff;  // [1/s]
 
     ivec2 resolution;       // [1]
@@ -27,9 +28,19 @@ layout(std430, binding = 2) readonly buffer uEmitters
 
 layout(r32f, binding = 1) uniform image2D uConcentrationImage;
 
+vec2 rotateToWindFrame(vec2 delta)
+{
+    float c = cos(windDir);
+    float s = sin(windDir);
+
+    return vec2(
+        delta.x * c + delta.y * s,
+        -s * delta.x + delta.y * c);
+}
+
 float gaussianConcentration(EmitterInfo e, vec2 pos)
 {
-    vec2 posRel = pos - e.position;
+    vec2 posRel = rotateToWindFrame(pos - e.position);
 
     if (posRel.x <= 0.0)
         return 0.0;

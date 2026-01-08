@@ -1,6 +1,7 @@
 #include "Application.hpp"
 #include <iostream>
 #include <imgui.h>
+#include <glm/glm.hpp>
 
 static void InitializeOpenGL()
 {
@@ -22,7 +23,8 @@ Application::Application()
     simConfig_ = {
         .Size = {1000.0f, 500.0f},
         .Stability = AtmosphericStabilityD,
-        .WindSpeed = 6.0f,
+        .WindSpeed = 10.0f,
+        .WindDir = glm::radians(45.0f),
         .DepositionCoeff = 0.0001f,
         .Resolution = {512, 512},
     };
@@ -33,7 +35,7 @@ Application::Application()
             .Height = 10.0f});
     simEmitters_.emplace_back(
         EmitterInfo {
-            .Position = {550.0f, 20.0f},
+            .Position = {550.0f, 320.0f},
             .EmissionRate = 4000.0f,
             .Height = 8.0f});
 
