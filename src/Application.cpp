@@ -1,7 +1,18 @@
 #include "Application.hpp"
 #include <iostream>
+#include <array>
+#include <utility>
 #include <imgui.h>
 #include <glm/glm.hpp>
+
+constexpr std::array<std::pair<const char*, glm::vec2>, 6> c_AtmosphericStabilityClasses {
+    std::make_pair("Extremely unstable (A)", AtmosphericStabilityA),
+    std::make_pair("Moderately unstable (B)", AtmosphericStabilityB),
+    std::make_pair("Slightly unstable (C)", AtmosphericStabilityC),
+    std::make_pair("Neutral (D)", AtmosphericStabilityD),
+    std::make_pair("Slightly stable (E)", AtmosphericStabilityE),
+    std::make_pair("Moderately stable (F)", AtmosphericStabilityF),
+};
 
 static void InitializeOpenGL()
 {
@@ -24,7 +35,7 @@ Application::Application()
         .Size = {1000.0f, 500.0f},
         .Stability = AtmosphericStabilityD,
         .WindSpeed = 10.0f,
-        .WindDir = glm::radians(45.0f),
+        .WindDir = glm::radians(0.0f),
         .DepositionCoeff = 0.0001f,
         .Resolution = {512, 512},
     };
@@ -59,6 +70,7 @@ void Application::Run()
         window_.PollEvents();
 
         simConfig_.EmittersCount = (int)simEmitters_.size();
+        simConfig_.Stability = c_AtmosphericStabilityClasses[selectedStabilityIdx_].second;
         simConfigBuffer_.Write(&simConfig_, sizeof(SimulationConfig));
         emittersBuffer_.Write(simEmitters_.data(), sizeof(EmitterInfo) * simEmitters_.size());
         simOutputTexture_.BindImage(1, GL_WRITE_ONLY);
@@ -78,6 +90,24 @@ void Application::Run()
         ImGui::Begin("Frame info");
         ImGui::Text(std::format("Frametime: {:.5f}", frameTime).c_str());
         ImGui::Text(std::format("FPS: {:.2f}", 1.0 / frameTime).c_str());
+        ImGui::End();
+
+        ImGui::Begin("Simulation settings");
+        ImGui::SliderFloat("Deposition coefficient", &simConfig_.DepositionCoeff, 0.0001f, 0.1f, "%.4f");
+        if (ImGui::BeginCombo("Atmospheric stability", c_AtmosphericStabilityClasses[selectedStabilityIdx_].first))
+        {
+            for (size_t i = 0; i < c_AtmosphericStabilityClasses.size(); i++)
+            {
+                const auto &stability = c_AtmosphericStabilityClasses[i];
+                if (ImGui::Selectable(stability.first, selectedStabilityIdx_ == i))
+                    selectedStabilityIdx_ = i;
+            }
+
+            ImGui::EndCombo();
+        }
+        ImGui::SeparatorText("Wind");
+        ImGui::SliderFloat("Speed [m/s]", &simConfig_.WindSpeed, 0.0f, 100.0f, "%.1f");
+        ImGui::SliderAngle("Direction", &simConfig_.WindDir);
         ImGui::End();
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.0f, 0.0f});

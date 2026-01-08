@@ -23,6 +23,7 @@ private:
     Shader simComputeShader_;
     SimulationConfig simConfig_;
     std::vector<EmitterInfo> simEmitters_;
+    size_t selectedStabilityIdx_ = 0;
 
     void CreateMainComputeShader();
 };
