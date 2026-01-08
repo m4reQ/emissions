@@ -28,6 +28,8 @@ public:
 
     void Use();
     void BindUniformBuffer(const std::string_view uniformBlockName, const Buffer &buffer);
+    void BindUniformBuffer(GLuint binding, const Buffer &buffer);
+    void BindShaderStorageBuffer(GLuint binding, const Buffer &buffer);
 
     constexpr GLuint GetID() const noexcept { return id_; }
 

@@ -118,7 +118,17 @@ void Shader::Use()
 
 void Shader::BindUniformBuffer(const std::string_view uniformBlockName, const Buffer &buffer)
 {
-    glBindBufferBase(GL_UNIFORM_BUFFER, GetUniformBlockLocation(uniformBlockName), buffer.GetID());
+    BindUniformBuffer(GetUniformBlockLocation(uniformBlockName), buffer);
+}
+
+void Shader::BindUniformBuffer(GLuint binding, const Buffer &buffer)
+{
+    glBindBufferBase(GL_UNIFORM_BUFFER, binding, buffer.GetID());
+}
+
+void Shader::BindShaderStorageBuffer(GLuint binding, const Buffer &buffer)
+{
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, buffer.GetID());
 }
 
 GLuint Shader::GetUniformBlockLocation(const std::string_view name)
