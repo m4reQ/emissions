@@ -1,4 +1,6 @@
 #pragma once
+#include <vector>
+#include "EmitterInfo.hpp"
 #include "SimulationConfig.hpp"
 #include "Window.hpp"
 #include "ImGUIContext.hpp"
@@ -12,7 +14,6 @@ public:
     Application();
 
     void Run();
-    
 private:
     Window window_;
     ImGUIContext imguiContext_;
@@ -21,4 +22,7 @@ private:
     Texture2D simOutputTexture_;
     Shader simComputeShader_;
     SimulationConfig simConfig_;
+    std::vector<EmitterInfo> simEmitters_;
+
+    void CreateMainComputeShader();
 };

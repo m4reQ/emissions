@@ -1,37 +1,45 @@
 #version 450
 
+struct EmitterInfo
+{
+    vec2 position;
+    float emissionRate;
+    float height;
+};
+
 layout(local_size_x = 16, local_size_y = 16) in;
 
-layout(std140) uniform uSimulationConfig
+layout(std140, binding = 1) uniform uSimulationConfig
 {
-    float emissionRate;     // [g/s]
+    vec2 size;              // [m]
+    vec2 stability;         // [1]
     float windSpeed;        // [m/s]
-    float effectiveHeight;  // [m]
     float depositionCoeff;  // [1/s]
-    // Simulation bounds
-    float xMax;             // [m]
-    float yMax;             // [m]
-    // Grid resolution
-    int xRes;               // [1]
-    int yRes;               // [1]
-    // Atmospheric stability
-    float stabilityA;       // [1]
-    float stabilityB;       // [1]
+
+    ivec2 resolution;       // [1]
+    int emittersCount;
+};
+
+layout(std430, binding = 2) readonly buffer uEmitters
+{
+    EmitterInfo emitters[];
 };
 
 layout(r32f, binding = 1) uniform image2D uConcentrationImage;
 
-float gaussianConcentration(float x, float y)
+float gaussianConcentration(EmitterInfo e, vec2 pos)
 {
-    if (x <= 0.0)
+    vec2 posRel = pos - e.position;
+
+    if (posRel.x <= 0.0)
         return 0.0;
 
-    float sy = stabilityA * x;
-    float sz = stabilityB * x;
-    float expoY = exp(-(y * y) / (2.0 * sy * sy));
-    float expoZ = exp(-(effectiveHeight * effectiveHeight) / (2.0 * sz * sz));
-    float base = emissionRate / (2.0 * 3.14159265359 * windSpeed * sy * sz);
-    float dep = exp(-depositionCoeff * x / windSpeed);
+    vec2 stabilityRel = stability * posRel.x;
+    float effectiveHeight = e.height;
+    float expoY = exp(-(pos.y * pos.y) / (2.0 * stabilityRel.x * stabilityRel.x));
+    float expoZ = exp(-(effectiveHeight * effectiveHeight) / (2.0 * stabilityRel.y * stabilityRel.y));
+    float base = e.emissionRate / (2.0 * 3.14159265359 * windSpeed * stabilityRel.x * stabilityRel.y);
+    float dep = exp(-depositionCoeff * pos.x / windSpeed);
 
     return base * expoY * expoZ * dep;
 }
@@ -40,13 +48,17 @@ void main()
 {
     ivec2 gid = ivec2(gl_GlobalInvocationID.xy);
 
-    if (gid.x >= xRes || gid.y >= yRes)
+    if (gid.x >= resolution.x || gid.y >= resolution.y)
         return;
 
-    float x = mix(1.0, xMax, float(gid.x) / float(xRes - 1));
-    float y = mix(-yMax, yMax, float(gid.y) / float(yRes - 1));
+    float x = mix(1.0, size.x, float(gid.x) / float(resolution.x - 1));
+    float y = mix(-size.y, size.y, float(gid.y) / float(resolution.y - 1));
 
-    float c = gaussianConcentration(x, y);
+    float concentration = 0.0;
+    for (int i = 0; i < emittersCount; i++)
+    {
+        concentration += gaussianConcentration(emitters[i], vec2(x, y));
+    }
 
-    imageStore(uConcentrationImage, gid, vec4(c, 0.0, 0.0, 1.0));
+    imageStore(uConcentrationImage, gid, vec4(concentration, 0.0, 0.0, 1.0));
 }

@@ -17,37 +17,34 @@ static void InitializeOpenGL()
         nullptr);
 }
 
-static Shader CreateMainComputeShader(const Buffer& uniformBuffer)
-{
-    Shader mainComputeShader({ShaderStage{GL_COMPUTE_SHADER, "./data/shaders/MainCompute.glsl"}});
-    mainComputeShader.BindUniformBuffer("uSimulationConfig", uniformBuffer);
-
-    return mainComputeShader;
-}
-
 Application::Application()
 {
     simConfig_ = {
-        .EmissionRate = 2000.0f,
+        .Size = {1000.0f, 500.0f},
+        .Stability = AtmosphericStabilityD,
         .WindSpeed = 6.0f,
-        .EffectiveHeight = 10.0f,
         .DepositionCoeff = 0.0001f,
-        .XMax = 1000.0f,
-        .YMax = 500.0f,
-        .XRes = 512,
-        .YRes = 512,
-        // Stability class D
-        .StabilityA = 0.08f,
-        .StabilityB = 0.06f,
+        .Resolution = {512, 512},
     };
+    simEmitters_.emplace_back(
+        EmitterInfo {
+            .Position = {200.0f, 100.0f},
+            .EmissionRate = 2000.0f,
+            .Height = 10.0f});
+    simEmitters_.emplace_back(
+        EmitterInfo {
+            .Position = {550.0f, 20.0f},
+            .EmissionRate = 4000.0f,
+            .Height = 8.0f});
 
     window_ = Window(1080, 720, "Emissions simulator");
     InitializeOpenGL();
 
     imguiContext_ = ImGUIContext(window_);
     simConfigBuffer_ = Buffer(sizeof(SimulationConfig));
-    simOutputTexture_ = Texture2D(simConfig_.XRes, simConfig_.YRes, GL_R32F);
-    simComputeShader_ = CreateMainComputeShader(simConfigBuffer_);
+    emittersBuffer_ = Buffer(32 * sizeof(EmitterInfo));
+    simOutputTexture_ = Texture2D(simConfig_.Resolution.x, simConfig_.Resolution.y, GL_R32F);
+    CreateMainComputeShader();
 }
 
 void Application::Run()
@@ -59,14 +56,14 @@ void Application::Run()
 
         window_.PollEvents();
 
-        simConfigBuffer_.Write(simConfig_);
+        simConfig_.EmittersCount = (int)simEmitters_.size();
+        simConfigBuffer_.Write(&simConfig_, sizeof(SimulationConfig));
+        emittersBuffer_.Write(simEmitters_.data(), sizeof(EmitterInfo) * simEmitters_.size());
         simOutputTexture_.BindImage(1, GL_WRITE_ONLY);
         simComputeShader_.Use();
         
-        glDispatchCompute(
-            (simConfig_.XRes + 15) / 16,
-            (simConfig_.YRes + 15) / 16,
-            1);
+        const auto groupSize = (simConfig_.Resolution + 15) / 16;
+        glDispatchCompute(groupSize.x, groupSize.y, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
         imguiContext_.NewFrame();
@@ -93,4 +90,11 @@ void Application::Run()
 
         frameTime = window_.GetTime() - start;
     }
+}
+
+void Application::CreateMainComputeShader()
+{
+    simComputeShader_ = Shader({ShaderStage{GL_COMPUTE_SHADER, "./data/shaders/MainCompute.glsl"}});
+    simComputeShader_.BindUniformBuffer(1, simConfigBuffer_);
+    simComputeShader_.BindShaderStorageBuffer(2, emittersBuffer_);
 }
