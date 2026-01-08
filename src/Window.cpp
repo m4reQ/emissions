@@ -10,7 +10,7 @@
 #endif
 
 
-Window::Window(int32_t width, int32_t height, const std::string_view name)
+Window::Window(int32_t width, int32_t height, const std::string_view name, bool enableVsync)
 {
     if (!glfwInit())
         throw std::runtime_error("Failed to initialize GLFW.");
@@ -34,7 +34,7 @@ Window::Window(int32_t width, int32_t height, const std::string_view name)
         throw std::runtime_error("Failed to create GLFW window.");
 
     glfwMakeContextCurrent(window_);
-    glfwSwapInterval(1);
+    glfwSwapInterval(enableVsync ? 1 : 0);
 }
 
 Window::~Window() noexcept

@@ -7,7 +7,7 @@ class Window
 {
 public:
     Window() = default;
-    Window(int32_t width, int32_t height, const std::string_view name);
+    Window(int32_t width, int32_t height, const std::string_view name, bool enableVsync = true);
 
     ~Window() noexcept;
 
