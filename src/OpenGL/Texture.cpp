@@ -14,9 +14,29 @@ Texture2D::Texture2D(GLsizei width, GLsizei height, GLenum format, GLsizei level
     glTextureParameteri(id_, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 }
 
+Texture2D::Texture2D(Texture2D &&other) noexcept
+{
+    id_ = std::exchange(other.id_, 0);
+    width_ = other.width_;
+    height_ = other.height_;
+    levels_ = other.levels_;
+    format_ = other.format_;
+}
+
 Texture2D::~Texture2D() noexcept
 {
     glDeleteTextures(1, &id_);
+}
+
+Texture2D &Texture2D::operator=(Texture2D &&other) noexcept
+{
+    id_ = std::exchange(other.id_, 0);
+    width_ = other.width_;
+    height_ = other.height_;
+    levels_ = other.levels_;
+    format_ = other.format_;
+    
+    return *this;
 }
 
 void Texture2D::Bind(GLuint unit) noexcept

@@ -6,9 +6,16 @@ class ImGUIContext
 public:
     ImGUIContext() = default;
     ImGUIContext(const Window &window);
+    ImGUIContext(const ImGUIContext&) = delete;
+    ImGUIContext(ImGUIContext&& other) noexcept;
 
+    ~ImGUIContext() noexcept;
+
+    ImGUIContext& operator=(ImGUIContext&& other) noexcept;
+    
     void NewFrame();
     void Render();
 
-    ~ImGUIContext() noexcept;
+private:
+    bool shouldFree_ = true;
 };

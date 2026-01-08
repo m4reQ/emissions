@@ -9,9 +9,21 @@ Buffer::Buffer(const void *data, GLsizeiptr size) noexcept
     glNamedBufferStorage(id_, size, nullptr, data ? 0 : GL_DYNAMIC_STORAGE_BIT);
 }
 
+Buffer::Buffer(Buffer &&other) noexcept
+{
+    id_ = std::exchange(other.id_, 0);
+}
+
 Buffer::~Buffer() noexcept
 {
     glDeleteBuffers(1, &id_);
+}
+
+Buffer &Buffer::operator=(Buffer &&other) noexcept
+{
+    id_ = std::exchange(other.id_, 0);
+
+    return *this;
 }
 
 void Buffer::Write(const std::span<std::byte> data, GLintptr offset)

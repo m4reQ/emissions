@@ -9,7 +9,6 @@
 #define OPENGL_DEBUG GLFW_FALSE
 #endif
 
-
 Window::Window(int32_t width, int32_t height, const std::string_view name, bool enableVsync)
 {
     if (!glfwInit())
@@ -37,10 +36,22 @@ Window::Window(int32_t width, int32_t height, const std::string_view name, bool 
     glfwSwapInterval(enableVsync ? 1 : 0);
 }
 
+Window::Window(Window&& other) noexcept
+    : window_(std::exchange(other.window_, nullptr)) { }
+
 Window::~Window() noexcept
 {
-    glfwDestroyWindow(window_);
-    glfwTerminate();
+    if (window_)
+    {
+        glfwDestroyWindow(window_);
+        glfwTerminate();
+    }
+}
+
+Window& Window::operator=(Window&& other) noexcept
+{
+    window_ = std::exchange(other.window_, nullptr);
+    return *this;
 }
 
 bool Window::ShouldClose() const noexcept

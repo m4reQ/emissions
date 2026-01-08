@@ -23,6 +23,11 @@ ImGUIContext::ImGUIContext(const Window &window)
         throw std::runtime_error("Failed to initialize ImGUI OpenGL backend.");
 }
 
+ImGUIContext::ImGUIContext(ImGUIContext &&other) noexcept
+{
+    shouldFree_ = std::exchange(other.shouldFree_, false);
+}
+
 void ImGUIContext::NewFrame()
 {
     ImGui::NewFrame();
@@ -38,7 +43,16 @@ void ImGUIContext::Render()
 
 ImGUIContext::~ImGUIContext() noexcept
 {
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    if (shouldFree_)
+    {
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+    }
+}
+
+ImGUIContext &ImGUIContext::operator=(ImGUIContext &&other) noexcept
+{
+    shouldFree_ = std::exchange(other.shouldFree_, false);
+    return *this;
 }

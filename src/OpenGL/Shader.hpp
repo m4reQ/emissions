@@ -7,24 +7,32 @@
 #include "Buffer.hpp"
 #include "../StringHash.hpp"
 
+struct ShaderStage
+{
+    GLenum Type;
+    const std::string_view SourceOrFilepath;
+    bool IsFromFile = true;
+};
+
 class Shader
 {
 public:
-    Shader();
+    Shader() = default;
+    Shader(const std::vector<ShaderStage> &stages);
+    Shader(const Shader&) = delete;
+    Shader(Shader&& other) noexcept;
 
     ~Shader() noexcept;
 
+    Shader& operator=(Shader&& other) noexcept;
+
     void Use();
-    void AddStage(GLenum type, const std::filesystem::path &filepath);
-    void AddStage(GLenum type, const std::string_view source);
-    void Link();
     void BindUniformBuffer(const std::string_view uniformBlockName, const Buffer &buffer);
 
     constexpr GLuint GetID() const noexcept { return id_; }
 
 private:
     std::unordered_map<std::string, GLuint, StringHash, std::equal_to<>> interface_;
-    std::vector<GLuint> stages_;
     GLuint id_;
 
     GLuint GetUniformBlockLocation(const std::string_view name);
