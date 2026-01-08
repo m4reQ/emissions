@@ -4,8 +4,21 @@
 
 Buffer::Buffer(GLsizeiptr size) noexcept
 {
+    Buffer(nullptr, size);
+}
+
+Buffer::Buffer(const std::span<std::byte> data)
+{
+    if (data.size_bytes() >= std::numeric_limits<GLsizeiptr>::max())
+        throw std::overflow_error("Data size exceeds size accepted by OpenGL call.");
+    
+    Buffer(data.data(), (GLsizeiptr)data.size_bytes());
+}
+
+Buffer::Buffer(const void *data, GLsizeiptr size) noexcept
+{
     glCreateBuffers(1, &id_);
-    glNamedBufferStorage(id_, size, nullptr, 0);
+    glNamedBufferStorage(id_, size, nullptr, data ? 0 : GL_DYNAMIC_STORAGE_BIT);
 }
 
 Buffer::~Buffer() noexcept
