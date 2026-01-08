@@ -1,12 +1,29 @@
 #include <iostream>
 #include <stdexcept>
 #include <format>
-#include "Window.hpp"
-#include "OpenGL/Framebuffer.hpp"
 #include <glad/gl.h>
 #include <imgui.h>
 #include <backends/imgui_impl_opengl3.h>
 #include <backends/imgui_impl_glfw.h>
+#include "Window.hpp"
+#include "OpenGL/Framebuffer.hpp"
+#include "OpenGL/Shader.hpp"
+#include "OpenGL/Buffer.hpp"
+#include "OpenGL/Texture.hpp"
+
+struct SimulationConfig
+{
+    float EmissionRate;
+    float WindSpeed;
+    float EffectiveHeight;
+    float DepositionCoeff;
+    float XMax;
+    float YMax;
+    int XRes;
+    int YRes;
+    float StabilityA;
+    float StabilityB;
+};
 
 static void RenderMainFrame(Framebuffer &framebuffer)
 {
@@ -18,7 +35,7 @@ static void RenderMainFrame(Framebuffer &framebuffer)
     framebuffer.Unbind();
 }
 
-static void RenderImGUI(Framebuffer &framebuffer, double frameTime)
+static void RenderImGUI(Framebuffer &framebuffer, Texture2D &simOutputTexture, double frameTime)
 {
     const auto &colorAttachment = framebuffer.GetAttachment(0);
 
@@ -38,8 +55,8 @@ static void RenderImGUI(Framebuffer &framebuffer, double frameTime)
     ImGui::End();
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.0f, 0.0f});
-    ImGui::Begin("Framebuffer", nullptr, ImGuiWindowFlags_NoTitleBar);
-    ImGui::Image((ImTextureRef)colorAttachment.ID, ImGui::GetContentRegionAvail());
+    ImGui::Begin("Simulation output", nullptr, ImGuiWindowFlags_NoTitleBar);
+    ImGui::Image((ImTextureRef)simOutputTexture.GetID(), ImVec2{(float)simOutputTexture.GetWidth(), (float)simOutputTexture.GetHeight()});
     ImGui::End();
     ImGui::PopStyleVar();
 
@@ -47,10 +64,39 @@ static void RenderImGUI(Framebuffer &framebuffer, double frameTime)
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-int main()
+static void RunSimulation(Shader &computeShader, Texture2D &texture, Buffer &uniformBuffer, const SimulationConfig &config)
 {
-    Window window(1080, 720, "Emissions simulator");
+    uniformBuffer.Write(config);
+    texture.BindImage(1, GL_WRITE_ONLY);
+    computeShader.Use();
 
+    glDispatchCompute(
+        (config.XRes + 15) / 16,
+        (config.YRes + 15) / 16,
+        1);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+}
+
+static Shader CreateMainComputeShader(const Buffer& uniformBuffer)
+{
+    Shader mainComputeShader;
+    mainComputeShader.AddStage(GL_COMPUTE_SHADER, std::filesystem::path("./data/shaders/MainCompute.glsl"));
+    mainComputeShader.Link();
+    mainComputeShader.BindUniformBuffer("uSimulationConfig", uniformBuffer);
+
+    return mainComputeShader;
+}
+
+static Framebuffer CreateFramebuffer(const Window& window)
+{
+    Framebuffer framebuffer(window.GetSize());
+    framebuffer.AddAttachment(GL_RGBA8);
+
+    return framebuffer;
+}
+
+static void InitializeOpenGL()
+{
     if (!gladLoadGL(glfwGetProcAddress))
         throw std::runtime_error("Failed to load OpenGL bindings.");
 
@@ -62,16 +108,18 @@ int main()
             std::cerr << std::format("OpenGL message: {}\n", message);
         },
         nullptr);
+}
 
-    Framebuffer framebuffer(window.GetSize());
-    framebuffer.AddAttachment(GL_RGBA8);
-
+static void InitializeImGUI(const Window& window)
+{
     if (!ImGui::CreateContext())
         throw std::runtime_error("Failed to create ImGUI context.");
+    
+    auto &imguiIO = ImGui::GetIO();
 
     const auto [width, height] = window.GetSize();
-    auto &imguiIO = ImGui::GetIO();
     imguiIO.DisplaySize = {(float)width, (float)height};
+
     imguiIO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     if (!ImGui_ImplGlfw_InitForOpenGL(window.GetHandle(), true))
@@ -79,6 +127,33 @@ int main()
     
     if (!ImGui_ImplOpenGL3_Init())
         throw std::runtime_error("Failed to initialize ImGUI OpenGL backend.");
+}
+
+int main()
+{
+    SimulationConfig simulationConfig {
+        .EmissionRate = 2000.0f,
+        .WindSpeed = 6.0f,
+        .EffectiveHeight = 10.0f,
+        .DepositionCoeff = 0.0001f,
+        .XMax = 1000.0f,
+        .YMax = 500.0f,
+        .XRes = 512,
+        .YRes = 512,
+        // Stability class D
+        .StabilityA = 0.08f,
+        .StabilityB = 0.06f,
+    };
+
+    Window window(1080, 720, "Emissions simulator");
+
+    InitializeOpenGL();
+    InitializeImGUI(window);
+
+    Buffer uniformBuffer(sizeof(SimulationConfig));
+    Texture2D simOutputTexture(simulationConfig.XRes, simulationConfig.YRes, GL_R32F);
+    auto mainComputeShader = CreateMainComputeShader(uniformBuffer);
+    auto framebuffer = CreateFramebuffer(window);
     
     double frameTime = 1.0;
     while (!window.ShouldClose())
@@ -88,7 +163,8 @@ int main()
         window.PollEvents();
 
         RenderMainFrame(framebuffer);
-        RenderImGUI(framebuffer, frameTime);
+        RunSimulation(mainComputeShader, simOutputTexture, uniformBuffer, simulationConfig);
+        RenderImGUI(framebuffer, simOutputTexture, frameTime);
 
         window.SwapBuffers();
 
