@@ -3,8 +3,6 @@
 #include <format>
 #include <glad/gl.h>
 #include <imgui.h>
-#include <backends/imgui_impl_opengl3.h>
-#include <backends/imgui_impl_glfw.h>
 #include "Window.hpp"
 #include "ImGUIContext.hpp"
 #include "OpenGL/Framebuffer.hpp"
@@ -36,13 +34,11 @@ static void RenderMainFrame(Framebuffer &framebuffer)
     framebuffer.Unbind();
 }
 
-static void RenderImGUI(Framebuffer &framebuffer, Texture2D &simOutputTexture, double frameTime)
+static void RenderImGUI(ImGUIContext &imgui, Framebuffer &framebuffer, Texture2D &simOutputTexture, double frameTime)
 {
     const auto &colorAttachment = framebuffer.GetAttachment(0);
 
-    ImGui::NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui_ImplOpenGL3_NewFrame();
+    imgui.NewFrame();
 
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -61,8 +57,7 @@ static void RenderImGUI(Framebuffer &framebuffer, Texture2D &simOutputTexture, d
     ImGui::End();
     ImGui::PopStyleVar();
 
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    imgui.Render();
 }
 
 static void RunSimulation(Shader &computeShader, Texture2D &texture, Buffer &uniformBuffer, const SimulationConfig &config)
@@ -147,7 +142,7 @@ int main()
 
         RenderMainFrame(framebuffer);
         RunSimulation(mainComputeShader, simOutputTexture, uniformBuffer, simulationConfig);
-        RenderImGUI(framebuffer, simOutputTexture, frameTime);
+        RenderImGUI(imguiContext, framebuffer, simOutputTexture, frameTime);
 
         window.SwapBuffers();
 

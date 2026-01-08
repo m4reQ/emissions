@@ -23,6 +23,19 @@ ImGUIContext::ImGUIContext(const Window &window)
         throw std::runtime_error("Failed to initialize ImGUI OpenGL backend.");
 }
 
+void ImGUIContext::NewFrame()
+{
+    ImGui::NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui_ImplOpenGL3_NewFrame();
+}
+
+void ImGUIContext::Render()
+{
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
 ImGUIContext::~ImGUIContext() noexcept
 {
     ImGui_ImplOpenGL3_Shutdown();
