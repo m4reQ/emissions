@@ -6,6 +6,7 @@
 #include <backends/imgui_impl_opengl3.h>
 #include <backends/imgui_impl_glfw.h>
 #include "Window.hpp"
+#include "ImGUIContext.hpp"
 #include "OpenGL/Framebuffer.hpp"
 #include "OpenGL/Shader.hpp"
 #include "OpenGL/Buffer.hpp"
@@ -69,7 +70,7 @@ static void RunSimulation(Shader &computeShader, Texture2D &texture, Buffer &uni
     uniformBuffer.Write(config);
     texture.BindImage(1, GL_WRITE_ONLY);
     computeShader.Use();
-
+    
     glDispatchCompute(
         (config.XRes + 15) / 16,
         (config.YRes + 15) / 16,
@@ -110,25 +111,6 @@ static void InitializeOpenGL()
         nullptr);
 }
 
-static void InitializeImGUI(const Window& window)
-{
-    if (!ImGui::CreateContext())
-        throw std::runtime_error("Failed to create ImGUI context.");
-    
-    auto &imguiIO = ImGui::GetIO();
-
-    const auto [width, height] = window.GetSize();
-    imguiIO.DisplaySize = {(float)width, (float)height};
-
-    imguiIO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-
-    if (!ImGui_ImplGlfw_InitForOpenGL(window.GetHandle(), true))
-        throw std::runtime_error("Failed to initialize ImGUI GLFW backend.");
-    
-    if (!ImGui_ImplOpenGL3_Init())
-        throw std::runtime_error("Failed to initialize ImGUI OpenGL backend.");
-}
-
 int main()
 {
     SimulationConfig simulationConfig {
@@ -148,7 +130,8 @@ int main()
     Window window(1080, 720, "Emissions simulator");
 
     InitializeOpenGL();
-    InitializeImGUI(window);
+
+    ImGUIContext imguiContext(window);
 
     Buffer uniformBuffer(sizeof(SimulationConfig));
     Texture2D simOutputTexture(simulationConfig.XRes, simulationConfig.YRes, GL_R32F);
@@ -171,9 +154,5 @@ int main()
         frameTime = window.GetTime() - start;
     }
 
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-    
     return 0;
 }
