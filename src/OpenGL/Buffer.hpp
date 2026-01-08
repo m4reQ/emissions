@@ -5,8 +5,12 @@
 class Buffer
 {
 public:
-    Buffer(GLsizeiptr size) noexcept;
-    Buffer(const std::span<std::byte> data);
+    Buffer(GLsizeiptr size) noexcept
+        : Buffer(nullptr, size) { }
+        
+    Buffer(const std::span<std::byte> data) noexcept
+        : Buffer(data.data(), (GLsizeiptr)data.size_bytes()) { }
+
     Buffer(const void *data, GLsizeiptr size) noexcept;
 
     ~Buffer() noexcept;
@@ -20,4 +24,5 @@ public:
     constexpr GLuint GetID() const noexcept { return id_; }
 private:
     GLuint id_;
+    GLsizeiptr size_;
 };
