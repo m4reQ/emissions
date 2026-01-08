@@ -4,10 +4,10 @@ project(emissions)
 
 add_subdirectory(vendor/glad)
 
-option(GLFW_BUILD_EXAMPLES OFF)
-option(GLFW_BUILD_TESTS OFF)
-option(GLFW_BUILD_DOCS OFF)
-option(GLFW_INSTALL OFF)
+set(GLFW_BUILD_EXAMPLES OFF)
+set(GLFW_BUILD_TESTS OFF)
+set(GLFW_BUILD_DOCS OFF)
+set(GLFW_INSTALL OFF)
 add_subdirectory(vendor/glfw)
 
 file(GLOB_RECURSE EMISSIONS_SOURCES CONFIGURE_DEPENDS "src/*.cpp")
@@ -20,7 +20,7 @@ add_executable(
     emissions
     ${EMISSIONS_SOURCES}
     ${IMGUI_SOURCES})
-target_link_libraries(emissions PUBLIC glfw glad_gl)
+target_link_libraries(emissions PUBLIC glfw glad_gl glm)
 target_include_directories(emissions PUBLIC "vendor/imgui")
 target_compile_definitions(emissions PUBLIC "GLFW_INCLUDE_NONE")
 set_target_properties(emissions PROPERTIES CXX_STANDARD 23)
