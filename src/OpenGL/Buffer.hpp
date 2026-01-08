@@ -9,14 +9,6 @@ public:
     Buffer(const std::span<std::byte> data);
     Buffer(const void *data, GLsizeiptr size) noexcept;
 
-    template <typename T>
-    Buffer(const T& value) noexcept
-        : Buffer(&value, sizeof(T)) { }
-
-    template <typename T>
-    Buffer(size_t elementsCount) noexcept
-        : Buffer(sizeof(T) * elementsCount) { }
-
     ~Buffer() noexcept;
 
     void Write(const std::span<std::byte> data, GLintptr offset = 0);
