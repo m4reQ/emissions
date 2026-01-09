@@ -4,6 +4,7 @@
 #include <utility>
 #include <imgui.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 constexpr std::array<std::pair<const char*, glm::vec2>, 6> c_AtmosphericStabilityClasses {
     std::make_pair("Extremely unstable (A)", AtmosphericStabilityA),
@@ -110,9 +111,40 @@ void Application::Run()
         ImGui::SliderAngle("Direction", &simConfig_.WindDir);
         ImGui::End();
 
+        ImGui::Begin("Emitters");
+        ImGui::Text("Emitters count: %d.", simEmitters_.size());
+        if (ImGui::BeginListBox("##Emitters"))
+        {
+            for (size_t i = 0; i < simEmitters_.size(); i++)
+            {
+                if (ImGui::Selectable(std::format("Emitter {}", i).c_str(), i == selectedEmitterIdx_))
+                    selectedEmitterIdx_ = i;
+            }
+
+            ImGui::EndListBox();
+        }
+        ImGui::End();
+
+        ImGui::Begin("Emitter info");
+        if (simEmitters_.size() > selectedEmitterIdx_)
+        {
+            auto &selectedEmitter = simEmitters_[selectedEmitterIdx_];
+            ImGui::Text("Position [m]");
+            ImGui::DragFloat("X", &selectedEmitter.Position.x, 0.1f, 0.0f, simConfig_.Size.x);
+            ImGui::DragFloat("Y", &selectedEmitter.Position.y, 0.1f, 0.0f, simConfig_.Size.y);
+            ImGui::Separator();
+            ImGui::DragFloat("Height [m]", &selectedEmitter.Height, 0.1f, 0.01f, 1000.0f, "%.1f");
+            ImGui::DragFloat("Emission rate [g/s]", &selectedEmitter.EmissionRate, 1.0f, 0.0f, 0.0f, "%.0f");
+        }
+        ImGui::End();
+
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.0f, 0.0f});
         ImGui::Begin("Simulation output", nullptr, ImGuiWindowFlags_NoTitleBar);
-        ImGui::Image((ImTextureRef)simOutputTexture_.GetID(), ImVec2{(float)simOutputTexture_.GetWidth(), (float)simOutputTexture_.GetHeight()});
+        const ImVec2 textureSize{(float)simOutputTexture_.GetWidth(), (float)simOutputTexture_.GetHeight()};
+        const auto windowSize = ImGui::GetContentRegionAvail();
+        ImGui::SetCursorPosX((windowSize.x - textureSize.x) / 2);
+        ImGui::SetCursorPosY((windowSize.y - textureSize.y) / 2);
+        ImGui::Image((ImTextureRef)simOutputTexture_.GetID(), textureSize);
         ImGui::End();
         ImGui::PopStyleVar();
 
