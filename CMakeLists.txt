@@ -16,6 +16,8 @@ set(GLM_BUILD_INSTALL OFF)
 set(GLM_ENABLE_LANG_EXTENSIONS ON)
 add_subdirectory(vendor/glm)
 
+add_subdirectory(vendor/json)
+
 file(GLOB_RECURSE EMISSIONS_SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 
 file(GLOB IMGUI_SOURCES CONFIGURE_DEPENDS "vendor/imgui/*.cpp")
@@ -26,7 +28,7 @@ add_executable(
     emissions
     ${EMISSIONS_SOURCES}
     ${IMGUI_SOURCES})
-target_link_libraries(emissions PUBLIC glfw glad_gl glm)
+target_link_libraries(emissions PUBLIC glfw glad_gl glm nlohmann_json::nlohmann_json)
 target_include_directories(emissions PUBLIC "vendor/imgui")
 target_compile_definitions(emissions PUBLIC "GLFW_INCLUDE_NONE")
 set_target_properties(emissions PROPERTIES CXX_STANDARD 23)
