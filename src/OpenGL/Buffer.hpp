@@ -22,6 +22,7 @@ public:
     void Write(const void *data, GLsizeiptr dataSize, GLintptr offset = 0);
 
     constexpr GLuint GetID() const noexcept { return id_; }
+    constexpr GLsizeiptr GetSize() const noexcept { return size_; }
 private:
     GLuint id_;
     GLsizeiptr size_;
