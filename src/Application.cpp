@@ -46,6 +46,24 @@ static std::pair<SimulationConfig, std::vector<EmitterInfo>> LoadSimulationConfi
             | std::ranges::to<std::vector>());
 }
 
+static void SaveSimulationConfigToFile(const std::string_view filepath, const SimulationConfig &config, const std::vector<EmitterInfo> &emitters)
+{
+    std::ofstream file(filepath.data());
+    if (!file.is_open())
+        throw std::runtime_error("Failed to open simulation config save file.");
+
+    auto jsonConfig = config.ToJSON();
+    jsonConfig["emitters"] = nlohmann::json::array();
+    std::ranges::for_each(
+        emitters,
+        [&](const auto &x)
+        {
+            jsonConfig["emitters"].emplace_back(x.ToJSON());
+        });
+    
+    jsonConfig >> file;
+}
+
 Application::Application()
 {
     window_ = Window(1080, 720, "Emissions simulator");
@@ -92,14 +110,17 @@ void Application::RenderUI()
                     .flags = ImGuiFileDialogFlags_Modal,
                 };
                 fileOpenDialog_.OpenDialog("ChooseFileDlgKey", "Choose simulation config file...", ".json", config);
+                openFileDialogAction_ = OpenFileDialogAction::Open;
             }
             if (ImGui::MenuItem("Save Config...", "Ctrl+S"))
             {
-                // TODO Add ability to save simulation config to file
-            }
-            if (ImGui::MenuItem("Save Config As...", "Ctrl+Shift+S"))
-            {
-                // TODO Add ability to save simulation config to file
+                const IGFD::FileDialogConfig config {
+                    .path = ".",
+                    .countSelectionMax = 1,
+                    .flags = ImGuiFileDialogFlags_Modal | ImGuiFileDialogFlags_ConfirmOverwrite,
+                };
+                fileOpenDialog_.OpenDialog("ChooseFileDlgKey", "Choose simulation config save file...", ".json", config);
+                openFileDialogAction_ = OpenFileDialogAction::Save;
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Close", "Alt+F4"))
@@ -197,9 +218,19 @@ void Application::RenderUI()
     {
         if (fileOpenDialog_.IsOk())
         {
-            auto [config, emitters] = LoadSimulationConfigFromFile(fileOpenDialog_.GetFilePathName());
-            simController_.SetConfig(std::move(config));
-            simController_.SetEmitters(std::move(emitters));
+            if (openFileDialogAction_ == OpenFileDialogAction::Open)
+            {
+                auto [config, emitters] = LoadSimulationConfigFromFile(fileOpenDialog_.GetFilePathName());
+                simController_.SetConfig(std::move(config));
+                simController_.SetEmitters(std::move(emitters));
+            }
+            else
+            {
+                SaveSimulationConfigToFile(
+                    fileOpenDialog_.GetFilePathName(),
+                    simController_.GetConfig(),
+                    simController_.GetEmitters());
+            }
         }
 
         fileOpenDialog_.Close();
