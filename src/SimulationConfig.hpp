@@ -1,4 +1,7 @@
 #pragma once
+#include <string_view>
+#include <fstream>
+#include <nlohmann/json.hpp>
 #include <glm/vec2.hpp>
 
 constexpr glm::vec2 AtmosphericStabilityA {0.22f, 0.20f};
@@ -18,4 +21,8 @@ struct SimulationConfig
     float _Pad1;
     glm::ivec2 Resolution;
     int EmittersCount;
+
+    static SimulationConfig FromJSON(const std::string_view data);
+    static SimulationConfig FromJSON(const nlohmann::json& data);
+    static SimulationConfig FromJSON(std::ifstream& fileStream);
 };

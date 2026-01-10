@@ -38,19 +38,9 @@ static SimulationConfig LoadSimulationConfigFromFile(const std::string_view file
     if (!file.is_open())
         throw std::runtime_error("Failed to open simulation config file.");
 
-    nlohmann::json data = nlohmann::json::parse(file);
+    const auto data = nlohmann::json::parse(file);
+    const auto config = SimulationConfig::FromJSON(data);
     
-    SimulationConfig config;
-    data.at("size").at(0).get_to(config.Size[0]);
-    data.at("size").at(1).get_to(config.Size[1]);
-    data.at("stability").at(0).get_to(config.Stability[0]);
-    data.at("stability").at(1).get_to(config.Stability[1]);
-    data.at("windSpeed").get_to(config.WindSpeed);
-    data.at("windDir").get_to(config.WindDir);
-    data.at("depositionCoeff").get_to(config.DepositionCoeff);
-    data.at("resolution").at(0).get_to(config.Resolution[0]);
-    data.at("resolution").at(1).get_to(config.Resolution[1]);
-
     for (const auto &emitterData : data.at("emitters"))
     {
         EmitterInfo info;
