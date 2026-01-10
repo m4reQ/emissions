@@ -18,6 +18,7 @@ public:
     bool ShouldClose() const noexcept;
     void PollEvents() const noexcept;
     void SwapBuffers() const noexcept;
+    void Close() const noexcept;
 
     int32_t GetWidth() const noexcept;
     int32_t GetHeight() const noexcept;

@@ -69,6 +69,11 @@ void Window::SwapBuffers() const noexcept
     glfwSwapBuffers(window_);
 }
 
+void Window::Close() const noexcept
+{
+    glfwSetWindowShouldClose(window_, GLFW_TRUE);
+}
+
 int32_t Window::GetWidth() const noexcept
 {
     int32_t width;
