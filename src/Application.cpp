@@ -40,17 +40,12 @@ static SimulationConfig LoadSimulationConfigFromFile(const std::string_view file
 
     const auto data = nlohmann::json::parse(file);
     const auto config = SimulationConfig::FromJSON(data);
-    
-    for (const auto &emitterData : data.at("emitters"))
-    {
-        EmitterInfo info;
-        emitterData.at("position").at(0).get_to(info.Position[0]);
-        emitterData.at("position").at(1).get_to(info.Position[1]);
-        emitterData.at("emissionRate").get_to(info.EmissionRate);
-        emitterData.at("height").get_to(info.Height);
-
-        emitters.emplace_back(info);
-    }
+    std::ranges::for_each(
+        data.at("emitters"),
+        [&](const auto& x)
+        {
+            return emitters.emplace_back(EmitterInfo::FromJSON(x));
+        });
 
     return config;
 }
