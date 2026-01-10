@@ -2,9 +2,11 @@
 #include <iostream>
 #include <array>
 #include <utility>
+#include <fstream>
 #include <imgui.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <nlohmann/json.hpp>
 
 constexpr std::array<std::pair<const char*, glm::vec2>, 6> c_AtmosphericStabilityClasses {
     std::make_pair("Extremely unstable (A)", AtmosphericStabilityA),
@@ -30,6 +32,39 @@ static void InitializeOpenGL()
         nullptr);
 }
 
+static SimulationConfig LoadSimulationConfigFromFile(const std::string_view filepath, std::vector<EmitterInfo>& emitters)
+{
+    std::ifstream file(filepath.data());
+    if (!file.is_open())
+        throw std::runtime_error("Failed to open simulation config file.");
+
+    nlohmann::json data = nlohmann::json::parse(file);
+    
+    SimulationConfig config;
+    data.at("size").at(0).get_to(config.Size[0]);
+    data.at("size").at(1).get_to(config.Size[1]);
+    data.at("stability").at(0).get_to(config.Stability[0]);
+    data.at("stability").at(1).get_to(config.Stability[1]);
+    data.at("windSpeed").get_to(config.WindSpeed);
+    data.at("windDir").get_to(config.WindDir);
+    data.at("depositionCoeff").get_to(config.DepositionCoeff);
+    data.at("resolution").at(0).get_to(config.Resolution[0]);
+    data.at("resolution").at(1).get_to(config.Resolution[1]);
+
+    for (const auto &emitterData : data.at("emitters"))
+    {
+        EmitterInfo info;
+        emitterData.at("position").at(0).get_to(info.Position[0]);
+        emitterData.at("position").at(1).get_to(info.Position[1]);
+        emitterData.at("emissionRate").get_to(info.EmissionRate);
+        emitterData.at("height").get_to(info.Height);
+
+        emitters.emplace_back(info);
+    }
+
+    return config;
+}
+
 Application::Application()
 {
     simConfig_ = {
@@ -40,16 +75,6 @@ Application::Application()
         .DepositionCoeff = 0.0001f,
         .Resolution = {512, 512},
     };
-    simEmitters_.emplace_back(
-        EmitterInfo {
-            .Position = {200.0f, 100.0f},
-            .EmissionRate = 2000.0f,
-            .Height = 10.0f});
-    simEmitters_.emplace_back(
-        EmitterInfo {
-            .Position = {550.0f, 320.0f},
-            .EmissionRate = 4000.0f,
-            .Height = 8.0f});
 
     window_ = Window(1080, 720, "Emissions simulator");
     InitializeOpenGL();
@@ -85,6 +110,36 @@ void Application::Run()
 
         glClearColor(0.0, 0.0, 0.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        if (ImGui::BeginMainMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+            {
+                if (ImGui::MenuItem("Open Config...", "Ctrl+O"))
+                {
+                    const IGFD::FileDialogConfig config {
+                        .path = ".",
+                        .countSelectionMax = 1,
+                        .flags = ImGuiFileDialogFlags_Modal,
+                    };
+                    fileOpenDialog_.OpenDialog("ChooseFileDlgKey", "Choose simulation config file...", ".json", config);
+                }
+                if (ImGui::MenuItem("Save Config...", "Ctrl+S"))
+                {
+                    // TODO Add ability to save simulation config to file
+                }
+                if (ImGui::MenuItem("Save Config As...", "Ctrl+Shift+S"))
+                {
+                    // TODO Add ability to save simulation config to file
+                }
+                ImGui::Separator();
+                if (ImGui::MenuItem("Close", "Alt+F4"))
+                    window_.Close();
+
+                ImGui::EndMenu();
+            }
+            ImGui::EndMainMenuBar();
+        }
 
         ImGui::DockSpaceOverViewport(0, 0, ImGuiDockNodeFlags_PassthruCentralNode);
 
@@ -147,6 +202,17 @@ void Application::Run()
         ImGui::Image((ImTextureRef)simOutputTexture_.GetID(), textureSize);
         ImGui::End();
         ImGui::PopStyleVar();
+
+        if (fileOpenDialog_.Display("ChooseFileDlgKey", ImGuiWindowFlags_NoCollapse))
+        {
+            if (fileOpenDialog_.IsOk())
+            {
+                simEmitters_.clear();
+                simConfig_ = LoadSimulationConfigFromFile(fileOpenDialog_.GetFilePathName(), simEmitters_);
+            }
+
+            fileOpenDialog_.Close();
+        }
 
         imguiContext_.Render();
 

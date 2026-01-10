@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <ImGuiFileDialog.h>
 #include "EmitterInfo.hpp"
 #include "SimulationConfig.hpp"
 #include "Window.hpp"
@@ -17,6 +18,7 @@ public:
 private:
     Window window_;
     ImGUIContext imguiContext_;
+    ImGuiFileDialog fileOpenDialog_;
     Buffer simConfigBuffer_;
     Buffer emittersBuffer_;
     Texture2D simOutputTexture_;
