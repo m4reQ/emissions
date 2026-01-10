@@ -20,3 +20,13 @@ EmitterInfo EmitterInfo::FromJSON(std::ifstream& fileStream)
 {
     return EmitterInfo::FromJSON(nlohmann::json::parse(fileStream));
 }
+
+nlohmann::json EmitterInfo::ToJSON() const
+{
+    nlohmann::json json;
+    json["position"] = nlohmann::json::array({Position.x, Position.y});
+    json["emissionRate"] = EmissionRate;
+    json["height"] = Height;
+
+    return json;
+}

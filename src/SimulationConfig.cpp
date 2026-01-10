@@ -25,3 +25,16 @@ SimulationConfig SimulationConfig::FromJSON(std::ifstream& fileStream)
 {
     return FromJSON(nlohmann::json::parse(fileStream));
 }
+
+nlohmann::json SimulationConfig::ToJSON() const
+{
+    nlohmann::json json;
+    json["size"] = nlohmann::json::array({Size.x, Size.y});
+    json["stability"] = nlohmann::json::array({Stability.x, Stability.y});
+    json["windSpeed"] = WindSpeed;
+    json["windDir"] = WindDir;
+    json["depositionCoeff"] = DepositionCoeff;
+    json["resolution"] = nlohmann::json::array({Resolution.x, Resolution.y});
+
+    return json;
+}

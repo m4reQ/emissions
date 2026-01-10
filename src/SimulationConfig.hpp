@@ -25,4 +25,6 @@ struct SimulationConfig
     static SimulationConfig FromJSON(const std::string_view data);
     static SimulationConfig FromJSON(const nlohmann::json& data);
     static SimulationConfig FromJSON(std::ifstream& fileStream);
+
+    nlohmann::json ToJSON() const;
 };

@@ -13,4 +13,6 @@ struct EmitterInfo
     static EmitterInfo FromJSON(const std::string_view data);
     static EmitterInfo FromJSON(const nlohmann::json& data);
     static EmitterInfo FromJSON(std::ifstream& fileStream);
+
+    nlohmann::json ToJSON() const;
 };
