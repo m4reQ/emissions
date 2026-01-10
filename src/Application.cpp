@@ -88,7 +88,6 @@ Application::Application()
 
 void Application::Run()
 {
-    double frameTime = 1.0;
     while (!window_.ShouldClose())
     {
         const auto start = window_.GetTime();
@@ -106,119 +105,11 @@ void Application::Run()
         glDispatchCompute(groupSize.x, groupSize.y, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-        imguiContext_.NewFrame();
-
-        glClearColor(0.0, 0.0, 0.0, 1.0);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        if (ImGui::BeginMainMenuBar())
-        {
-            if (ImGui::BeginMenu("File"))
-            {
-                if (ImGui::MenuItem("Open Config...", "Ctrl+O"))
-                {
-                    const IGFD::FileDialogConfig config {
-                        .path = ".",
-                        .countSelectionMax = 1,
-                        .flags = ImGuiFileDialogFlags_Modal,
-                    };
-                    fileOpenDialog_.OpenDialog("ChooseFileDlgKey", "Choose simulation config file...", ".json", config);
-                }
-                if (ImGui::MenuItem("Save Config...", "Ctrl+S"))
-                {
-                    // TODO Add ability to save simulation config to file
-                }
-                if (ImGui::MenuItem("Save Config As...", "Ctrl+Shift+S"))
-                {
-                    // TODO Add ability to save simulation config to file
-                }
-                ImGui::Separator();
-                if (ImGui::MenuItem("Close", "Alt+F4"))
-                    window_.Close();
-
-                ImGui::EndMenu();
-            }
-            ImGui::EndMainMenuBar();
-        }
-
-        ImGui::DockSpaceOverViewport(0, 0, ImGuiDockNodeFlags_PassthruCentralNode);
-
-        ImGui::Begin("Frame info");
-        ImGui::Text(std::format("Frametime: {:.5f}", frameTime).c_str());
-        ImGui::Text(std::format("FPS: {:.2f}", 1.0 / frameTime).c_str());
-        ImGui::End();
-
-        ImGui::Begin("Simulation settings");
-        ImGui::SliderFloat("Deposition coefficient", &simConfig_.DepositionCoeff, 0.0001f, 0.1f, "%.4f");
-        if (ImGui::BeginCombo("Atmospheric stability", c_AtmosphericStabilityClasses[selectedStabilityIdx_].first))
-        {
-            for (size_t i = 0; i < c_AtmosphericStabilityClasses.size(); i++)
-            {
-                const auto &stability = c_AtmosphericStabilityClasses[i];
-                if (ImGui::Selectable(stability.first, selectedStabilityIdx_ == i))
-                    selectedStabilityIdx_ = i;
-            }
-
-            ImGui::EndCombo();
-        }
-        ImGui::SeparatorText("Wind");
-        ImGui::SliderFloat("Speed [m/s]", &simConfig_.WindSpeed, 0.0f, 100.0f, "%.1f");
-        ImGui::SliderAngle("Direction", &simConfig_.WindDir);
-        ImGui::End();
-
-        ImGui::Begin("Emitters");
-        ImGui::Text("Emitters count: %d.", simEmitters_.size());
-        if (ImGui::BeginListBox("##Emitters"))
-        {
-            for (size_t i = 0; i < simEmitters_.size(); i++)
-            {
-                if (ImGui::Selectable(std::format("Emitter {}", i).c_str(), i == selectedEmitterIdx_))
-                    selectedEmitterIdx_ = i;
-            }
-
-            ImGui::EndListBox();
-        }
-        ImGui::End();
-
-        ImGui::Begin("Emitter info");
-        if (simEmitters_.size() > selectedEmitterIdx_)
-        {
-            auto &selectedEmitter = simEmitters_[selectedEmitterIdx_];
-            ImGui::Text("Position [m]");
-            ImGui::DragFloat("X", &selectedEmitter.Position.x, 0.1f, 0.0f, simConfig_.Size.x);
-            ImGui::DragFloat("Y", &selectedEmitter.Position.y, 0.1f, 0.0f, simConfig_.Size.y);
-            ImGui::Separator();
-            ImGui::DragFloat("Height [m]", &selectedEmitter.Height, 0.1f, 0.01f, 1000.0f, "%.1f");
-            ImGui::DragFloat("Emission rate [g/s]", &selectedEmitter.EmissionRate, 1.0f, 0.0f, 0.0f, "%.0f");
-        }
-        ImGui::End();
-
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.0f, 0.0f});
-        ImGui::Begin("Simulation output", nullptr, ImGuiWindowFlags_NoTitleBar);
-        const ImVec2 textureSize{(float)simOutputTexture_.GetWidth(), (float)simOutputTexture_.GetHeight()};
-        const auto windowSize = ImGui::GetContentRegionAvail();
-        ImGui::SetCursorPosX((windowSize.x - textureSize.x) / 2);
-        ImGui::SetCursorPosY((windowSize.y - textureSize.y) / 2);
-        ImGui::Image((ImTextureRef)simOutputTexture_.GetID(), textureSize);
-        ImGui::End();
-        ImGui::PopStyleVar();
-
-        if (fileOpenDialog_.Display("ChooseFileDlgKey", ImGuiWindowFlags_NoCollapse))
-        {
-            if (fileOpenDialog_.IsOk())
-            {
-                simEmitters_.clear();
-                simConfig_ = LoadSimulationConfigFromFile(fileOpenDialog_.GetFilePathName(), simEmitters_);
-            }
-
-            fileOpenDialog_.Close();
-        }
-
-        imguiContext_.Render();
+        RenderUI();
 
         window_.SwapBuffers();
 
-        frameTime = window_.GetTime() - start;
+        frametime_ = window_.GetTime() - start;
     }
 }
 
@@ -227,4 +118,117 @@ void Application::CreateMainComputeShader()
     simComputeShader_ = Shader({ShaderStage{GL_COMPUTE_SHADER, "./data/shaders/MainCompute.glsl"}});
     simComputeShader_.BindUniformBuffer(1, simConfigBuffer_);
     simComputeShader_.BindShaderStorageBuffer(2, emittersBuffer_);
+}
+
+void Application::RenderUI()
+{
+    imguiContext_.NewFrame();
+
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("Open Config...", "Ctrl+O"))
+            {
+                const IGFD::FileDialogConfig config {
+                    .path = ".",
+                    .countSelectionMax = 1,
+                    .flags = ImGuiFileDialogFlags_Modal,
+                };
+                fileOpenDialog_.OpenDialog("ChooseFileDlgKey", "Choose simulation config file...", ".json", config);
+            }
+            if (ImGui::MenuItem("Save Config...", "Ctrl+S"))
+            {
+                // TODO Add ability to save simulation config to file
+            }
+            if (ImGui::MenuItem("Save Config As...", "Ctrl+Shift+S"))
+            {
+                // TODO Add ability to save simulation config to file
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Close", "Alt+F4"))
+                window_.Close();
+
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+
+    ImGui::DockSpaceOverViewport(0, 0, ImGuiDockNodeFlags_PassthruCentralNode);
+
+    ImGui::Begin("Frame info");
+    ImGui::Text(std::format("Frametime: {:.5f}", frametime_).c_str());
+    ImGui::Text(std::format("FPS: {:.2f}", 1.0 / frametime_).c_str());
+    ImGui::End();
+
+    ImGui::Begin("Simulation settings");
+    ImGui::SliderFloat("Deposition coefficient", &simConfig_.DepositionCoeff, 0.0001f, 0.1f, "%.4f");
+    if (ImGui::BeginCombo("Atmospheric stability", c_AtmosphericStabilityClasses[selectedStabilityIdx_].first))
+    {
+        for (size_t i = 0; i < c_AtmosphericStabilityClasses.size(); i++)
+        {
+            const auto &stability = c_AtmosphericStabilityClasses[i];
+            if (ImGui::Selectable(stability.first, selectedStabilityIdx_ == i))
+                selectedStabilityIdx_ = i;
+        }
+
+        ImGui::EndCombo();
+    }
+    ImGui::SeparatorText("Wind");
+    ImGui::SliderFloat("Speed [m/s]", &simConfig_.WindSpeed, 0.0f, 100.0f, "%.1f");
+    ImGui::SliderAngle("Direction", &simConfig_.WindDir);
+    ImGui::End();
+
+    ImGui::Begin("Emitters");
+    ImGui::Text("Emitters count: %d.", simEmitters_.size());
+    if (ImGui::BeginListBox("##Emitters"))
+    {
+        for (size_t i = 0; i < simEmitters_.size(); i++)
+        {
+            if (ImGui::Selectable(std::format("Emitter {}", i).c_str(), i == selectedEmitterIdx_))
+                selectedEmitterIdx_ = i;
+        }
+
+        ImGui::EndListBox();
+    }
+    ImGui::End();
+
+    ImGui::Begin("Emitter info");
+    if (simEmitters_.size() > selectedEmitterIdx_)
+    {
+        auto &selectedEmitter = simEmitters_[selectedEmitterIdx_];
+        ImGui::Text("Position [m]");
+        ImGui::DragFloat("X", &selectedEmitter.Position.x, 0.1f, 0.0f, simConfig_.Size.x);
+        ImGui::DragFloat("Y", &selectedEmitter.Position.y, 0.1f, 0.0f, simConfig_.Size.y);
+        ImGui::Separator();
+        ImGui::DragFloat("Height [m]", &selectedEmitter.Height, 0.1f, 0.01f, 1000.0f, "%.1f");
+        ImGui::DragFloat("Emission rate [g/s]", &selectedEmitter.EmissionRate, 1.0f, 0.0f, 0.0f, "%.0f");
+    }
+    ImGui::End();
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.0f, 0.0f});
+    ImGui::Begin("Simulation output", nullptr, ImGuiWindowFlags_NoTitleBar);
+    const ImVec2 textureSize{(float)simOutputTexture_.GetWidth(), (float)simOutputTexture_.GetHeight()};
+    const auto windowSize = ImGui::GetContentRegionAvail();
+    ImGui::SetCursorPosX((windowSize.x - textureSize.x) / 2);
+    ImGui::SetCursorPosY((windowSize.y - textureSize.y) / 2);
+    ImGui::Image((ImTextureRef)simOutputTexture_.GetID(), textureSize);
+    ImGui::End();
+    ImGui::PopStyleVar();
+
+    if (fileOpenDialog_.Display("ChooseFileDlgKey", ImGuiWindowFlags_NoCollapse))
+    {
+        if (fileOpenDialog_.IsOk())
+        {
+            simEmitters_.clear();
+            simConfig_ = LoadSimulationConfigFromFile(fileOpenDialog_.GetFilePathName(), simEmitters_);
+        }
+
+        fileOpenDialog_.Close();
+    }
+
+    imguiContext_.Render();
 }

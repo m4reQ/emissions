@@ -18,7 +18,7 @@ public:
 private:
     Window window_;
     ImGUIContext imguiContext_;
-    ImGuiFileDialog fileOpenDialog_;
+    IGFD::FileDialog fileOpenDialog_;
     Buffer simConfigBuffer_;
     Buffer emittersBuffer_;
     Texture2D simOutputTexture_;
@@ -27,6 +27,8 @@ private:
     std::vector<EmitterInfo> simEmitters_;
     size_t selectedStabilityIdx_ = 0;
     size_t selectedEmitterIdx_ = 0;
+    double frametime_ = 1.0;
 
     void CreateMainComputeShader();
+    void RenderUI();
 };
