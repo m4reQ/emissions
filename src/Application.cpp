@@ -32,22 +32,18 @@ static void InitializeOpenGL()
         nullptr);
 }
 
-static SimulationConfig LoadSimulationConfigFromFile(const std::string_view filepath, std::vector<EmitterInfo>& emitters)
+static std::pair<SimulationConfig, std::vector<EmitterInfo>> LoadSimulationConfigFromFile(const std::string_view filepath)
 {
     std::ifstream file(filepath.data());
     if (!file.is_open())
         throw std::runtime_error("Failed to open simulation config file.");
 
     const auto data = nlohmann::json::parse(file);
-    const auto config = SimulationConfig::FromJSON(data);
-    std::ranges::for_each(
-        data.at("emitters"),
-        [&](const auto& x)
-        {
-            return emitters.emplace_back(EmitterInfo::FromJSON(x));
-        });
-
-    return config;
+    return std::make_pair(
+        SimulationConfig::FromJSON(data),
+        data.at("emitters")
+            | std::views::transform([](const auto& x) { return EmitterInfo::FromJSON(x); })
+            | std::ranges::to<std::vector>());
 }
 
 Application::Application()
@@ -201,8 +197,9 @@ void Application::RenderUI()
     {
         if (fileOpenDialog_.IsOk())
         {
-            simController_.ClearEmitters();
-            simController_.SetConfig(LoadSimulationConfigFromFile(fileOpenDialog_.GetFilePathName(), simController_.GetEmitters()));
+            auto [config, emitters] = LoadSimulationConfigFromFile(fileOpenDialog_.GetFilePathName());
+            simController_.SetConfig(std::move(config));
+            simController_.SetEmitters(std::move(emitters));
         }
 
         fileOpenDialog_.Close();

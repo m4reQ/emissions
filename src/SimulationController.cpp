@@ -96,8 +96,3 @@ void SimulationController::ClearEmitters()
 {
     emitters_.clear();
 }
-
-void SimulationController::SetConfig(const SimulationConfig &config)
-{
-    config_ = config;
-}

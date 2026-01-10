@@ -22,7 +22,8 @@ public:
     void AddEmitter(const glm::vec2 &position, float height, float emissionRate);
     void RemoveEmitter(size_t emitterIdx);
     void ClearEmitters();
-    void SetConfig(const SimulationConfig &config);
+    void SetEmitters(std::vector<EmitterInfo> &&emitters) noexcept { emitters_ = std::move(emitters); }
+    void SetConfig(SimulationConfig &&config) noexcept { config_ = std::move(config); }
 
     constexpr SimulationConfig& GetConfig() noexcept { return config_; }
     constexpr std::vector<EmitterInfo>& GetEmitters() noexcept { return emitters_; }
