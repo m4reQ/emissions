@@ -183,7 +183,6 @@ void Application::RenderUI()
     ImGui::End();
 
     ImGui::Begin("Emitters");
-    ImGui::Text("Emitters count: %d.", simEmitters_.size());
     if (ImGui::BeginListBox("##Emitters"))
     {
         for (size_t i = 0; i < simEmitters_.size(); i++)
@@ -194,6 +193,12 @@ void Application::RenderUI()
 
         ImGui::EndListBox();
     }
+    if (ImGui::Button("Add emitter"))
+    {
+        simEmitters_.emplace_back(EmitterInfo{});
+    }
+    ImGui::SameLine();
+    ImGui::Text("Emitters count: %d.", simEmitters_.size());
     ImGui::End();
 
     ImGui::Begin("Emitter info");
@@ -206,6 +211,12 @@ void Application::RenderUI()
         ImGui::Separator();
         ImGui::DragFloat("Height [m]", &selectedEmitter.Height, 0.1f, 0.01f, 1000.0f, "%.1f");
         ImGui::DragFloat("Emission rate [g/s]", &selectedEmitter.EmissionRate, 1.0f, 0.0f, 0.0f, "%.0f");
+        ImGui::Separator();
+
+        if (ImGui::Button("Remove"))
+        {
+            simEmitters_.erase(simEmitters_.begin() + selectedEmitterIdx_);
+        }
     }
     ImGui::End();
 
