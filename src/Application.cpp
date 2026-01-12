@@ -1,6 +1,8 @@
 #include "Application.hpp"
 #include <iostream>
 #include <array>
+#include <ranges>
+#include <format>
 #include <utility>
 #include <fstream>
 #include <imgui.h>
@@ -27,7 +29,7 @@ static void InitializeOpenGL()
     glDebugMessageCallback(
         [](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam)
         {
-            std::cerr << std::format("OpenGL message: {}\n", message);
+            std::cerr << "OpenGL message: " << message << '\n';
         },
         nullptr);
 }
@@ -134,8 +136,8 @@ void Application::RenderUI()
     ImGui::DockSpaceOverViewport(0, 0, ImGuiDockNodeFlags_PassthruCentralNode);
 
     ImGui::Begin("Frame info");
-    ImGui::Text(std::format("Frametime: {:.5f}", frametime_).c_str());
-    ImGui::Text(std::format("FPS: {:.2f}", 1.0 / frametime_).c_str());
+    ImGui::Text("Frametime: %.5lf", frametime_);
+    ImGui::Text("FPS: %.2lf", 1.0 / frametime_);
     ImGui::End();
 
     ImGui::Begin("Simulation settings");
