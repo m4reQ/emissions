@@ -183,7 +183,7 @@ void Application::RenderUI()
         simController_.AddEmitter(EmitterInfo{});
     }
     ImGui::SameLine();
-    ImGui::Text("Emitters count: %d.", simController_.GetEmittersCount());
+    ImGui::Text("Emitters count: %zu.", simController_.GetEmittersCount());
     ImGui::Separator();
     if (simController_.GetEmittersCount() > selectedEmitterIdx_)
     {
