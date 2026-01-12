@@ -82,7 +82,7 @@ jobs:
 
     - name: Upload artifact to GitHub Release
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.SECRET_KEY }}
       run: |
         gh release upload `
           ${{ github.event.release.tag_name }} `
