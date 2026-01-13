@@ -34,6 +34,7 @@ add_executable(
 target_link_libraries(emissions PUBLIC glfw glad_gl glm nlohmann_json::nlohmann_json ImGuiFileDialog)
 target_include_directories(emissions PUBLIC "vendor/imgui")
 target_compile_definitions(emissions PUBLIC "GLFW_INCLUDE_NONE")
+target_precompile_headers(emissions PRIVATE "src/PCH.hpp")
 set_target_properties(emissions PROPERTIES CXX_STANDARD 23)
 
 add_custom_command(
