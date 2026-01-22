@@ -3,7 +3,6 @@
 #include <iostream>
 #include <fstream>
 #include <format>
-#include <ranges>
 
 static GLuint CreateStage(GLenum type, const std::string_view source)
 {
@@ -59,18 +58,16 @@ Shader::Shader(const std::vector<ShaderStage> &stages)
 {
     id_ = glCreateProgram();
 
-    auto stageIDs = stages
-        | std::views::transform(
-            [](const auto &stage)
-            {
-                return stage.IsFromFile
-                    ? CreateStageFromFile(stage.Type, stage.SourceOrFilepath)
-                    : CreateStage(stage.Type, stage.SourceOrFilepath);
-            })
-        | std::ranges::to<std::vector>();
-    
-    for (const auto stageID : stageIDs)
+    std::vector<GLuint> stageIDs;
+    stageIDs.reserve(stages.size());
+    for (const auto& stage : stages)
+    {
+        const auto stageID = stage.IsFromFile
+            ? CreateStageFromFile(stage.Type, stage.SourceOrFilepath)
+            : CreateStage(stage.Type, stage.SourceOrFilepath);
         glAttachShader(id_, stageID);
+        stageIDs.emplace_back(stageID);
+    }
     
     glLinkProgram(id_);
 

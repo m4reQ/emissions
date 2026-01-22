@@ -1,5 +1,4 @@
 #include "Framebuffer.hpp"
-#include <ranges>
 
 Framebuffer::Framebuffer(GLsizei width, GLsizei height)
     : width_(width), height_(height)
@@ -9,9 +8,10 @@ Framebuffer::Framebuffer(GLsizei width, GLsizei height)
 
 Framebuffer::~Framebuffer() noexcept
 {
-    auto attachmentIDs = attachments_
-        | std::views::transform([](const auto &attachment) { return attachment.ID; })
-        | std::ranges::to<std::vector>();
+    std::vector<GLuint> attachmentIDs;
+    attachmentIDs.reserve(attachments_.size());
+    for (const auto& attachment : attachments_)
+        attachmentIDs.emplace_back(attachment.ID);
 
     glDeleteTextures(attachmentIDs.size(), attachmentIDs.data());
     glDeleteFramebuffers(1, &id_);
