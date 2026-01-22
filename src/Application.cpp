@@ -8,6 +8,7 @@
 #include <imgui.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/epsilon.hpp>
 #include <nlohmann/json.hpp>
 
 constexpr std::array<std::pair<const char*, glm::vec2>, 6> c_AtmosphericStabilityClasses {
@@ -68,11 +69,15 @@ static void SaveSimulationConfigToFile(const std::string_view filepath, const Si
 
 Application::Application()
 {
-    window_ = Window(1080, 720, "Emissions simulator");
+    window_ = Window(1080, 720, "Emissions simulator", false);
     InitializeOpenGL();
+
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureResolution_);
     
     imguiContext_ = ImGUIContext(window_);
     simController_ = SimulationController({1000.0f, 500.0f}, {512, 512});
+    gridResolutionNew_ = simController_.GetConfig().Resolution;
+    gridSizeNew_ = simController_.GetConfig().Size;
 }
 
 void Application::Run()
@@ -166,10 +171,38 @@ void Application::RenderUI()
     }
     ImGui::SeparatorText("Wind");
     ImGui::SliderFloat("Speed [m/s]", &simController_.GetConfig().WindSpeed, 0.0f, 100.0f, "%.1f");
+
+    // TODO Implement wind direction correctly
+    ImGui::BeginDisabled();
     ImGui::SliderAngle("Direction", &simController_.GetConfig().WindDir);
+    ImGui::EndDisabled();
+
+    ImGui::SeparatorText("Grid");
+    ImGui::TextUnformatted("Resolution");
+    ImGui::SliderInt("X", &gridResolutionNew_.x, 0, maxTextureResolution_, "%d", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderInt("Y", &gridResolutionNew_.y, 0, maxTextureResolution_, "%d", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::TextUnformatted("Size");
+    ImGui::DragFloat("X [m]", &gridSizeNew_.x, 1.0f);
+    ImGui::DragFloat("Y [m]", &gridSizeNew_.y, 1.0f);
+    
+    const auto gridResolutionChanged = gridResolutionNew_ != simController_.GetConfig().Resolution;
+    const auto gridSizeChanged = 
+        glm::epsilonNotEqual(gridSizeNew_.x, simController_.GetConfig().Size.x, 1.0e-6f)
+        || glm::epsilonNotEqual(gridSizeNew_.y, simController_.GetConfig().Size.y, 1.0e-6f);
+    ImGui::BeginDisabled(!(gridResolutionChanged || gridSizeChanged));
+    if (ImGui::Button("Apply"))
+    {
+        simController_.GetConfig().Resolution = gridResolutionNew_;
+        simController_.GetConfig().Size = gridSizeNew_;
+
+        simController_.ResizeTexture(gridResolutionNew_);
+    }
+    ImGui::EndDisabled();
+
     ImGui::End();
 
     ImGui::Begin("Emitters");
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
     if (ImGui::BeginListBox("##Emitters"))
     {
         for (size_t i = 0; i < simController_.GetEmittersCount(); i++)
@@ -208,8 +241,11 @@ void Application::RenderUI()
     ImGui::Begin("Simulation output", nullptr, ImGuiWindowFlags_NoTitleBar);
 
     const auto& outputTexture = simController_.GetOutputTexture();
-    const ImVec2 textureSize{(float)outputTexture.GetWidth(), (float)outputTexture.GetHeight()};
     const auto windowSize = ImGui::GetContentRegionAvail();
+    const auto scale = std::min(
+        windowSize.x / (float)outputTexture.GetWidth(),
+        windowSize.y / (float)outputTexture.GetHeight());
+    const ImVec2 textureSize{scale * outputTexture.GetWidth(), scale * outputTexture.GetHeight()};
     ImGui::SetCursorPosX((windowSize.x - textureSize.x) / 2);
     ImGui::SetCursorPosY((windowSize.y - textureSize.y) / 2);
     ImGui::Image((ImTextureRef)outputTexture.GetID(), textureSize);

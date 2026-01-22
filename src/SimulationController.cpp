@@ -9,6 +9,7 @@ constexpr size_t c_DefaultEmittersCapacity = 32;
 constexpr GLuint c_ConfigBufferBinding = 1;
 constexpr GLuint c_EmittersBufferBinding = 2;
 constexpr GLuint c_OutputTextureBinding = 1;
+constexpr GLenum c_OutputTextureFormat = GL_R32F;
 
 SimulationController::SimulationController(const glm::vec2 &gridSize, const glm::ivec2 &gridResolution)
 {
@@ -25,7 +26,7 @@ SimulationController::SimulationController(const glm::vec2 &gridSize, const glm:
 
     configBuffer_ = Buffer(sizeof(SimulationConfig));
     emittersBuffer_ = Buffer(sizeof(EmitterInfo) * c_DefaultEmittersCapacity);
-    outputTexture_ = Texture2D(gridResolution, GL_R32F);
+    outputTexture_ = Texture2D(gridResolution, c_OutputTextureFormat);
 
     computeShader_ = Shader({{GL_COMPUTE_SHADER, "./data/shaders/MainCompute.glsl"}});
     computeShader_.BindUniformBuffer(c_ConfigBufferBinding, configBuffer_);
@@ -72,7 +73,7 @@ void SimulationController::Calculate()
 
     computeShader_.Use();
 
-    const auto groupSize = (config_.Resolution + 15) / 16;
+    const auto groupSize = (outputTexture_.GetSize() + 15) / 16;
     glDispatchCompute(groupSize.x, groupSize.y, 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
@@ -95,4 +96,14 @@ void SimulationController::RemoveEmitter(size_t emitterIdx)
 void SimulationController::ClearEmitters()
 {
     emitters_.clear();
+}
+
+void SimulationController::ResizeTexture(const glm::ivec2& size) noexcept
+{
+    ResizeTexture(size.x, size.y);
+}
+
+void SimulationController::ResizeTexture(int width, int height) noexcept
+{
+    outputTexture_ = Texture2D(width, height, c_OutputTextureFormat);
 }

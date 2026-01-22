@@ -24,6 +24,8 @@ public:
     void ClearEmitters();
     void SetEmitters(std::vector<EmitterInfo> &&emitters) noexcept { emitters_ = std::move(emitters); }
     void SetConfig(SimulationConfig &&config) noexcept { config_ = std::move(config); }
+    void ResizeTexture(const glm::ivec2& size) noexcept;
+    void ResizeTexture(int width, int height) noexcept;
 
     constexpr SimulationConfig& GetConfig() noexcept { return config_; }
     constexpr std::vector<EmitterInfo>& GetEmitters() noexcept { return emitters_; }

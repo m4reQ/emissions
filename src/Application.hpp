@@ -23,6 +23,9 @@ private:
     IGFD::FileDialog fileOpenDialog_;
     SimulationController simController_;
     OpenFileDialogAction openFileDialogAction_;
+    GLint maxTextureResolution_;
+    glm::ivec2 gridResolutionNew_;
+    glm::vec2 gridSizeNew_;
     size_t selectedEmitterIdx_ = 0;
     double frametime_ = 1.0;
 

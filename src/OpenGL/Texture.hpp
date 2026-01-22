@@ -23,7 +23,7 @@ public:
     constexpr GLuint GetID() const noexcept { return id_; }
     constexpr GLsizei GetWidth() const noexcept { return width_; }
     constexpr GLsizei GetHeight() const noexcept { return height_; }
-    constexpr std::pair<GLsizei, GLsizei> GetSize() const noexcept { return {width_, height_}; }
+    constexpr glm::ivec2 GetSize() const noexcept { return glm::ivec2(width_, height_); }
 private:
     GLuint id_;
     GLsizei width_;
