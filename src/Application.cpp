@@ -1,7 +1,6 @@
 #include "Application.hpp"
 #include <iostream>
 #include <array>
-#include <ranges>
 #include <format>
 #include <utility>
 #include <fstream>
@@ -42,11 +41,15 @@ static std::pair<SimulationConfig, std::vector<EmitterInfo>> LoadSimulationConfi
         throw std::runtime_error("Failed to open simulation config file.");
 
     const auto data = nlohmann::json::parse(file);
-    return std::make_pair(
-        SimulationConfig::FromJSON(data),
-        data.at("emitters")
-            | std::views::transform([](const auto& x) { return EmitterInfo::FromJSON(x); })
-            | std::ranges::to<std::vector>());
+    const auto& emittersData = data.at("emitters");
+
+    std::vector<EmitterInfo> emitters;
+    emitters.reserve(emittersData.size());
+
+    for (const auto& x : emittersData)
+        emitters.emplace_back(EmitterInfo::FromJSON(x));
+
+    return std::make_pair(SimulationConfig::FromJSON(data), emitters);
 }
 
 static void SaveSimulationConfigToFile(const std::string_view filepath, const SimulationConfig &config, const std::vector<EmitterInfo> &emitters)
@@ -56,14 +59,12 @@ static void SaveSimulationConfigToFile(const std::string_view filepath, const Si
         throw std::runtime_error("Failed to open simulation config save file.");
 
     auto jsonConfig = config.ToJSON();
-    jsonConfig["emitters"] = nlohmann::json::array();
-    std::ranges::for_each(
-        emitters,
-        [&](const auto &x)
-        {
-            jsonConfig["emitters"].emplace_back(x.ToJSON());
-        });
-    
+    auto emittersData = nlohmann::json::array();
+
+    for (const auto& x : emitters)
+        emittersData.push_back(x.ToJSON());
+
+    jsonConfig["emitters"] = std::move(emittersData);
     jsonConfig >> file;
 }
 

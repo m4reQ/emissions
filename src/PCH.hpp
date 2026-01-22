@@ -3,7 +3,6 @@
 #include <string_view>
 #include <vector>
 #include <array>
-#include <ranges>
 #include <utility>
 #include <format>
 #include <iostream>
