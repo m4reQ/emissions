@@ -32,7 +32,7 @@ static GLuint CreateStage(GLenum type, const std::string_view source)
 static GLuint CreateStageFromFile(GLenum type, const std::string_view filepath)
 {
     std::ifstream file;
-    file.open(filepath);
+    file.open(filepath.data());
     if (!file.is_open())
         throw std::runtime_error("Failed to open shader stage source file.");
 
@@ -68,7 +68,7 @@ Shader::Shader(const std::vector<ShaderStage> &stages)
         glAttachShader(id_, stageID);
         stageIDs.emplace_back(stageID);
     }
-    
+
     glLinkProgram(id_);
 
     for (const auto stageID : stageIDs)
