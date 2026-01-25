@@ -70,7 +70,7 @@ static void SaveSimulationConfigToFile(const std::string_view filepath, const Si
 
 Application::Application()
 {
-    window_ = Window(1080, 720, "Emissions simulator", false);
+    window_ = Window(1080, 720, "Emissions simulator", true);
     InitializeOpenGL();
 
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureResolution_);
@@ -227,8 +227,10 @@ void Application::RenderUI()
         const auto &simConfig = simController_.GetConfig();
         ImGui::Text("Position [m]");
         ImGui::DragFloat("X", &selectedEmitter.Position.x, 0.1f, 0.0f, simConfig.Size.x);
+        ImGui::BeginDisabled();
         ImGui::DragFloat("Y", &selectedEmitter.Position.y, 0.1f, 0.0f, simConfig.Size.y);
-        ImGui::Separator();
+        ImGui::EndDisabled();
+        ImGui::Separator(); 
         ImGui::DragFloat("Height [m]", &selectedEmitter.Height, 0.1f, 0.01f, 1000.0f, "%.1f");
         ImGui::DragFloat("Emission rate [g/s]", &selectedEmitter.EmissionRate, 1.0f, 0.0f, 0.0f, "%.0f");
         ImGui::Separator();
